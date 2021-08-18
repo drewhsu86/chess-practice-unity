@@ -7,6 +7,7 @@ public class ChessboardInputs : MonoBehaviour
 {
     [SerializeField] GameObject panel;
     [SerializeField] ChessController chessController;
+    [SerializeField] bool showText = true;
     ChessPositionInput[,] boardPositionInputs = new ChessPositionInput[8,8];
  
     private Camera cam;
@@ -30,7 +31,7 @@ public class ChessboardInputs : MonoBehaviour
             for (int w = 0; w < 8; w++) {
                 boardPositionInputs[l,w] = Instantiate(panel,  transform).GetComponent<ChessPositionInput>();
                 int pieceNum = chessController.board[l,w];
-                boardPositionInputs[l,w].InitializeAtPosition(l,w,pieceNum);
+                boardPositionInputs[l,w].InitializeAtPosition(l,w,pieceNum, showText);
             }
         }
     }
@@ -40,6 +41,7 @@ public class ChessboardInputs : MonoBehaviour
             for (int w = 0; w < 8; w++) {
                 int pieceNum = chessController.board[l,w];
                 boardPositionInputs[l,w].SetPiece(pieceNum);
+                boardPositionInputs[l,w].SetTextDisplay(showText);
             }
         }
     }
@@ -104,6 +106,13 @@ public class ChessboardInputs : MonoBehaviour
         if (isLegal(coord)) {
             // execute this move
             print("Execute order 66");
+            chessController.ExecuteMove(selected, coord);
+
+            // clean up board
+            SetHighlights(selected, legal, false);
+            selected = null;
+            legal = null;
+            ReflectBoard();
         } else {
             // determine what to highlight or to unhighlight
             ChessResponseData response = chessController.InquireMove(coord);

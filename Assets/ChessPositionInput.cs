@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,20 +9,40 @@ public class ChessPositionInput : MonoBehaviour
     [SerializeField] int x;
     [SerializeField] int y;
     [SerializeField] float sideLength = 1;
+    ChessController chessController;
     GameObject selected;
     GameObject legal;
     TextMesh displayText;
+    SpriteRenderer pieceSprite;
     Dictionary<int, string> pieceDictionary;
+    Sprite[] spriteList;
+    int[] spriteIndices;
 
-    void Start() {
-        // initialize function needs to be run by the instantiation object
-        selected = transform.Find("Selected").gameObject;
-        legal = transform.Find("Legal").gameObject;
+
+    public void SetTextDisplay(bool showDisplay) {
+        if (!showDisplay) displayText.text = "";
     }
 
-    public void InitializeAtPosition(int l, int w, int pieceNum) {
-        
-        pieceDictionary = GameObject.Find("ChessController").GetComponent<ChessController>().pieceDictionary;
+    private void ShowSprite(int pieceNum) {
+        // find index in spriteIndices and reflect the sprite in spriteList
+        if (pieceNum == 0) { 
+            pieceSprite.sprite = null;
+            return;
+        }
+        int spriteIndex = Array.IndexOf(spriteIndices, pieceNum);
+        pieceSprite.sprite = spriteList[spriteIndex];
+    }
+
+    public void InitializeAtPosition(int l, int w, int pieceNum, bool textDisplay) {
+        selected = transform.Find("Selected").gameObject;
+        legal = transform.Find("Legal").gameObject;
+
+        chessController = GameObject.Find("ChessController").GetComponent<ChessController>();
+        pieceSprite = transform.Find("Piece").GetComponent<SpriteRenderer>();
+
+        pieceDictionary = chessController.pieceDictionary;
+        spriteList = chessController.spriteList;
+        spriteIndices = chessController.spriteIndices;
 
         // l and w go from 0 to 7
         // the chess board (empty object) is the upper left corner
@@ -32,7 +53,7 @@ public class ChessPositionInput : MonoBehaviour
         transform.localPosition = new Vector2(w*sideLength,-l*sideLength);
 
         displayText = transform.Find("TextMesh").GetComponent<TextMesh>();
-        displayText.text = pieceDictionary[pieceNum];
+        
         if ((l+w)%2 != 0) {
             // if this square's position is even (0,0 ... 0,2 ... 2,2) etc.
             // it should be white (alternating ones are black)
@@ -41,10 +62,13 @@ public class ChessPositionInput : MonoBehaviour
         }
 
         gameObject.name = "ChessboardSquare-"+l+","+w;
+        if (textDisplay) displayText.text = pieceDictionary[pieceNum];
+        ShowSprite(pieceNum);
     }
 
     public void SetPiece(int pieceNum) {
         displayText.text = pieceDictionary[pieceNum];
+        ShowSprite(pieceNum);
     }
 
     public int[] GetCoord() {

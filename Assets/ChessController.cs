@@ -2,12 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ChessController : MonoBehaviour
 {
     private enum Phases {choose, move};
     private Phases phase = Phases.choose;
     private int turn = 1; // 1 for white, 2 for black
+    public List<int> blackCaptures = new List<int>();
+    public List<int> whiteCaptures = new List<int>();
+
     public int[,] board = new int[8,8] {
         {25,26,27,28,29,27,26,25},
         {21,21,21,21,21,21,21,21},
@@ -34,6 +38,9 @@ public class ChessController : MonoBehaviour
         {19, "W-K"},
         {11, "w-p"},
     };
+
+    public Sprite[] spriteList;
+    public int[] spriteIndices = new int[] {11, 15, 16, 17, 18, 19, 21, 25, 26, 27, 28, 29};
 
     [SerializeField] Text statusText;
 
@@ -135,17 +142,23 @@ public class ChessController : MonoBehaviour
         if (phase == Phases.choose && ownersTurn) {
             // if it's this piece's owner's turn and they chose a piece
             switch (rank) {
+                case 9: 
+                    nextLegal = moveList.LegalMovesKing(coord, board, owner);
+                    break;
                 case 8: 
                     nextLegal = moveList.LegalMovesQueen(coord, board, owner);
                     break;
                 case 7: 
                     nextLegal = moveList.LegalMovesBishop(coord, board, owner);
                     break;
+                case 6: 
+                    nextLegal = moveList.LegalMovesKnight(coord, board, owner);
+                    break;
                 case 5: 
                     nextLegal = moveList.LegalMovesRook(coord, board, owner);
                     break;
-                default:
-                    nextLegal = moveList.LegalMovesRook(coord, board, owner);
+                case 1:
+                    nextLegal = moveList.LegalMovesPawn(coord, board, owner);
                     break;
             }
         }
@@ -169,6 +182,37 @@ public class ChessController : MonoBehaviour
         print("Piece:" + BoardPiece(coord));
 
         return new ChessResponseData(1, nextPhase, nextLegal);
+    }
+
+    public void ExecuteMove(int[] selected, int[] dest) {
+        // this is only when a click is confirmed a move
+        // aka a clicked piece is on the legal moves list in ChessboardInputs 
+
+        int destPieceNum = board[dest[0], dest[1]];
+        if (destPieceNum != 0) {
+            // if it's an enemy piece, determine where to store it and then store it 
+            int owner = (int)Mathf.Floor(destPieceNum/10);
+            int rank = destPieceNum%10;
+
+            if (owner == 1) whiteCaptures.Add(destPieceNum);
+            else blackCaptures.Add(destPieceNum);
+
+            // if king, end the game 
+            if (rank == 9) Endgame(owner == 1 ? 2 : 1);
+        }
+
+        // actually move the thing 
+        int pieceNum = board[selected[0], selected[1]];
+        board[selected[0], selected[1]] = 0; // old space empty
+        board[dest[0], dest[1]] = pieceNum; // moved to new space
+
+        // change turn and phase upon execution 
+        ProcessPhase(true, true);
+    }
+
+    private void Endgame(int winner) {
+        string winScene = winner == 1 ? "WhiteWin" : "BlackWin";
+        SceneManager.LoadScene(winScene);
     }
 }
 
