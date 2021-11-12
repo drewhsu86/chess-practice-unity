@@ -3,5 +3,5 @@
 ## Unity
 Unity Version 2020.3.9f1
 
-## Upload/Demo
+## Deployed/Demo
 https://ahsu-unity-chess-v1.surge.sh/
